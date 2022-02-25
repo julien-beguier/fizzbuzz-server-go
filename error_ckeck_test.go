@@ -3,30 +3,32 @@ package main
 import (
 	"fmt"
 	"testing"
+
+	"github.com/julien-beguier/fizzbuzz-server-go/controller"
 )
 
 type TestCase struct {
-	qp            QueryParam
+	qp            controller.QueryParam
 	expextedError string
 }
 
 func TestErrorCasesCheckParams(t *testing.T) {
 	errorCases := []TestCase{
 		// Empty set -> equivalent of not giving any parameter
-		{QueryParam{"", "", "", "", ""}, "parameter limit is required\nparameter int1 is required\nparameter int2 is required\nparameter str1 is required\nparameter str2 is required"},
+		{controller.QueryParam{}, "parameter limit is required\nparameter int1 is required\nparameter int2 is required\nparameter str1 is required\nparameter str2 is required"},
 
 		// Numbers: not a numeric value, negative value & out of range integer value
-		{QueryParam{Limit: "azerty", Int1: "3", Int2: "5", Str1: "abc", Str2: "def"}, "parameter limit is not a numeric value (received:azerty)"},
-		{QueryParam{Limit: "100", Int1: "-456", Int2: "5", Str1: "abc", Str2: "def"}, "int type parameter cannot be less than 1 (received:-456)"},
-		{QueryParam{Limit: "100", Int1: "3", Int2: "77777777777777777777777777777777777777777777777777777", Str1: "abc", Str2: "def"}, "int type parameter is out of range (received:77777777777777777777777777777777777777777777777777777)"},
+		{controller.QueryParam{Limit: "azerty", Int1: "3", Int2: "5", Str1: "abc", Str2: "def"}, "parameter limit is not a numeric value (received:azerty)"},
+		{controller.QueryParam{Limit: "100", Int1: "-456", Int2: "5", Str1: "abc", Str2: "def"}, "int type parameter cannot be less than 1 (received:-456)"},
+		{controller.QueryParam{Limit: "100", Int1: "3", Int2: "77777777777777777777777777777777777777777777777777777", Str1: "abc", Str2: "def"}, "int type parameter is out of range (received:77777777777777777777777777777777777777777777777777777)"},
 
 		// String: not alphanumeric characters, more than 64 characters
-		{QueryParam{Limit: "100", Int1: "3", Int2: "5", Str1: "!!!!", Str2: "str2"}, "parameter str1 is not an alphanumeric value (received:!!!!)"},
-		{QueryParam{Limit: "100", Int1: "3", Int2: "5", Str1: "str1", Str2: "65CHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARACTERS"}, "parameter str2 cannot be over 64 characters (received:65CHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARACTERS)"},
+		{controller.QueryParam{Limit: "100", Int1: "3", Int2: "5", Str1: "!!!!", Str2: "str2"}, "parameter str1 is not an alphanumeric value (received:!!!!)"},
+		{controller.QueryParam{Limit: "100", Int1: "3", Int2: "5", Str1: "str1", Str2: "65CHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARACTERS"}, "parameter str2 cannot be over 64 characters (received:65CHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARACTERS)"},
 	}
 
 	for _, tc := range errorCases {
-		_, err := checkParams(tc.qp)
+		_, err := controller.CheckParams(tc.qp)
 		if err != nil && err.Error() != tc.expextedError {
 			t.Log(fmt.Sprintf("error should be '%s' but got '%s'", tc.expextedError, err.Error()))
 			t.Fail()
@@ -40,15 +42,15 @@ func TestValidCaseCheckParams(t *testing.T) {
 	int2Expected := uint(5)
 	str1Expected := "toto"
 	str2Expected := "titi"
-	validCase := QueryParam{
-		fmt.Sprint(limitExpected), // string
-		fmt.Sprint(int1Expected),  // string
-		fmt.Sprint(int2Expected),  // string
-		str1Expected,
-		str2Expected,
+	validCase := controller.QueryParam{
+		Limit: fmt.Sprint(limitExpected), // string
+		Int1:  fmt.Sprint(int1Expected),  // string
+		Int2:  fmt.Sprint(int2Expected),  // string
+		Str1:  str1Expected,
+		Str2:  str2Expected,
 	}
 
-	statistic, err := checkParams(validCase)
+	statistic, err := controller.CheckParams(validCase)
 	if err != nil {
 		t.Log(fmt.Sprintf("error should be <nil> but got '%s'", err.Error()))
 		t.Fail()
