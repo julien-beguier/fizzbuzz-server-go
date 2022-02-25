@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -27,18 +29,28 @@ func dbConnect() {
 	dbUser := "fizzbuzz-user"
 	dbPass := "7bMP+_qjyyAVy+=mY+DU"
 	dbName := "fizzbuzz"
-	dsn := dbUser + ":" + dbPass + "@tcp(:3306)/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := dbUser + ":" + dbPass + "@tcp(db:3306)/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatal("failed to connect to database", err)
+	// Interval at which a new try is done, 5 seconds
+	ticker := time.NewTicker(time.Second * 10)
+	// Timeout of 5 minutes for mysql initialization
+	timeout := time.NewTicker(time.Minute * 5)
+	for {
+		select {
+		// If timeout is reached, abort
+		case <-timeout.C:
+			log.Fatal(errors.New("failed to connect to database"))
+		case <-ticker.C:
+			if db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{}); err == nil {
+				DBgorm = db
+				return
+			}
+		}
 	}
-
-	DBgorm = db
 }
 
 func init() {
-	// Database initialisation first
+	// Database initialization first
 	dbConnect()
 }
 

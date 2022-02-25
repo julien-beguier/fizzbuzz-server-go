@@ -1,0 +1,26 @@
+services:
+  fizzbuzz:
+    container_name: fizzbuzz-server
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0.28
+    container_name: fizzbuzz-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'fizzbuzz'
+      MYSQL_USER: 'fizzbuzz-user'
+      MYSQL_PASSWORD: '7bMP+_qjyyAVy+=mY+DU'
+      MYSQL_ROOT_PASSWORD: 'rootpassword'
+    ports:
+      # <Port exposed> : < MySQL Port running inside container>
+      - "3306:3306"
+    expose:
+      # Opens port 3306 on the container
+      - "3306"

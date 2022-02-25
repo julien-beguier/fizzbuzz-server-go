@@ -1,0 +1,14 @@
+.git
+bin/
+sql/
+docker-compose.yml
+Dockerfile
+*test.go
+LICENSE
+Makefile
+README.md
+
+# local
+links.txt
+subject.txt
+TODO.txt
