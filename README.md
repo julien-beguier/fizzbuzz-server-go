@@ -1,6 +1,27 @@
 # fizzbuzz-server-go
 Implementation of the fizzbuzz game in Go - https://en.wikipedia.org/wiki/Fizz_buzz
 
+## Run locally
+
+First thing to do is clone the repository of your choice
+```
+git clone https://github.com/julien-beguier/fizzbuzz-server-go.git
+```
+Change directory and launch:
+```
+docker-compose up --build
+```
+That's it!
+
+You can now request either:
+```
+localhost:8080/list
+```
+or
+```
+localhost:8080/statistics
+```
+
 ## Available routes:
 
 ### `GET` /list
@@ -34,27 +55,6 @@ Query parameters
 * Returns the parameters corresponding to the most used request, as well as the
 number of hits for this request
 
-## Deploy
-
-First thing to do is clone the repository
-```
-cd /var/tmp && git clone https://github.com/julien-beguier/fizzbuzz-server-go.git
-```
-Then launch:
-```
-docker-compose up
-```
-That's it!
-
-You can now request either:
-```
-localhost:18080/list?
-```
-or
-```
-localhost:18080/statistics
-```
-
-### Requirements
+## Requirements
 
 docker & docker-compose
