@@ -11,6 +11,7 @@ import (
 	"github.com/julien-beguier/fizzbuzz-server-go/model"
 	"github.com/julien-beguier/fizzbuzz-server-go/service"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type QueryParam struct {
@@ -21,6 +22,16 @@ type QueryParam struct {
 	Str2  string `validate:"required,alphanum,max=64"`
 }
 
+type Controller struct {
+	service *service.Service
+}
+
+func NewController(DBgorm *gorm.DB) *Controller {
+	return &Controller{
+		service: service.NewService(DBgorm),
+	}
+}
+
 // Check parameters, call the service to get the fizzbuzz numbers list.
 // Then the service is called to save the parameters in a MySQL database for
 // further requesting.
@@ -29,7 +40,7 @@ type QueryParam struct {
 //
 // If one or more parameter is missing or incorrect, this method returns an error
 // message with http error code 400 (Bad request).
-func GetFizzbuzzNumbers(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetFizzbuzzNumbers(w http.ResponseWriter, r *http.Request) {
 	queryParamMap := r.URL.Query()
 	queryParam := QueryParam{
 		Limit: queryParamMap.Get("limit"),
@@ -38,7 +49,7 @@ func GetFizzbuzzNumbers(w http.ResponseWriter, r *http.Request) {
 		Str1:  queryParamMap.Get("str1"),
 		Str2:  queryParamMap.Get("str2")}
 
-	stat, errParameters := CheckParams(queryParam)
+	stat, errParameters := checkParams(queryParam)
 	if errParameters != nil {
 		// One or more parameter is not valid, abort with 400
 		http.Error(w, errParameters.Error(), 400)
@@ -46,10 +57,10 @@ func GetFizzbuzzNumbers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fizzbuzz Algo
-	fizzbuzzNumbers := service.FizzbuzzList(stat)
+	fizzbuzzNumbers := c.service.FizzbuzzList(stat)
 
 	// Save the parameters in DB
-	service.UpdateDB(stat)
+	c.service.UpdateDB(stat)
 
 	// Send the fizzbuzz numbers
 	log.Info("Fizzbuzz numbers printed")
@@ -66,7 +77,7 @@ func GetFizzbuzzNumbers(w http.ResponseWriter, r *http.Request) {
 //
 // - If there isn't at least one statistic row saved in database this method
 // returns an error message with http error code 404 (Not found).
-func GetStatistics(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetStatistics(w http.ResponseWriter, r *http.Request) {
 	// Accept no parameter
 	queryParamMap := r.URL.Query()
 	if len(queryParamMap) != 0 {
@@ -75,7 +86,7 @@ func GetStatistics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Query DB about the most used paramters
-	statistics := service.RetriveStatistics()
+	statistics := c.service.RetriveStatistics()
 
 	// There is no row
 	if len(statistics) == 0 {
@@ -99,10 +110,9 @@ func writeToCaller(w http.ResponseWriter, s string) {
 // Builds a string containing all error messages separated by a new line '\n'
 func buildErrorMessage(errorString string, s string) string {
 	if len(errorString) > 0 {
-		return fmt.Sprintf("%s\n%s", errorString, s)
-	} else {
-		return s
+		s = fmt.Sprintf("%s\n%s", errorString, s)
 	}
+	return s
 }
 
 // Checks to see if an int is valid for the fizzbuzz algorithm.
@@ -111,13 +121,17 @@ func buildErrorMessage(errorString string, s string) string {
 func checkIntFromParam(s string) (int, error) {
 	v, err := strconv.Atoi(s)
 
-	//strconv.ErrSyntax is handled by validator
-	if err != nil && errors.Is(err, strconv.ErrSyntax) {
-		return 0, nil
-	} else if err != nil && errors.Is(err, strconv.ErrRange) {
-		err = fmt.Errorf("int type parameter is out of range (received:%s)", s)
-		return -1, err
-	} else if v < 1 {
+	if err != nil {
+		// strconv.ErrSyntax is handled by validator
+		if errors.Is(err, strconv.ErrSyntax) {
+			return 0, nil
+		} else if errors.Is(err, strconv.ErrRange) {
+			err = fmt.Errorf("int type parameter is out of range (received:%s)", s)
+			return -1, err
+		}
+	}
+
+	if v < 1 {
 		err = fmt.Errorf("int type parameter cannot be less than 1 (received:%s)", s)
 		return -1, err
 	}
@@ -127,7 +141,7 @@ func checkIntFromParam(s string) (int, error) {
 // Checks & validates the given parameters for the fizzbuzz algorithm.
 //
 // In case of error(s), builds an error with all detected errors and returns it.
-func CheckParams(qp QueryParam) (*model.Statistic, error) {
+func checkParams(qp QueryParam) (*model.Statistic, error) {
 	errorString := ""
 	validate := validator.New()
 
@@ -138,14 +152,17 @@ func CheckParams(qp QueryParam) (*model.Statistic, error) {
 		}
 
 		for _, err := range err.(validator.ValidationErrors) {
-			if err.ActualTag() == "required" {
+			switch err.ActualTag() {
+			case "required":
 				errorString = buildErrorMessage(errorString, fmt.Sprintf("parameter %s is required", strings.ToLower(err.StructField())))
-			} else if err.ActualTag() == "numeric" {
+			case "numeric":
 				errorString = buildErrorMessage(errorString, fmt.Sprintf("parameter %s is not a numeric value (received:%s)", strings.ToLower(err.StructField()), err.Value()))
-			} else if err.ActualTag() == "alphanum" {
+			case "alphanum":
 				errorString = buildErrorMessage(errorString, fmt.Sprintf("parameter %s is not an alphanumeric value (received:%s)", strings.ToLower(err.StructField()), err.Value()))
-			} else if err.ActualTag() == "max" {
+			case "max":
 				errorString = buildErrorMessage(errorString, fmt.Sprintf("parameter %s cannot be over 64 characters (received:%s)", strings.ToLower(err.StructField()), err.Value()))
+			default:
+				// All possible cases handled by the validators
 			}
 		}
 	}

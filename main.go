@@ -14,15 +14,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/julien-beguier/fizzbuzz-server-go/controller"
 	"github.com/julien-beguier/fizzbuzz-server-go/model"
-	"github.com/julien-beguier/fizzbuzz-server-go/service"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
 	PORT = 8080
 )
-
-var DBgorm *gorm.DB
 
 type DatabaseVars struct {
 	user     string
@@ -59,14 +56,7 @@ func getDatabaseVariablesFromEnv() DatabaseVars {
 // Try to connect to the database and sets the Gorm object if it succeed.
 //
 // If there is an error, the program will abort.
-func dbConnect(dbVars DatabaseVars) {
-	// dbUser := "fizzbuzz-user"
-	// dbPass := "7bMP+_qjyyAVy+=mY+DU"
-	// dbName := "fizzbuzz"
-	// Because when this run inside a container, is use the docker network
-	// interface to communicate with other container
-	// dbHost := "db"
-	// dbPort := "3306"
+func dbConnect(dbVars DatabaseVars) *gorm.DB {
 	dsn := dbVars.user + ":" + dbVars.password + "@tcp(" + dbVars.host + ":" + dbVars.port + ")/" + dbVars.database + "?charset=utf8mb4&parseTime=True&loc=Local"
 
 	// Interval at which a new try is done, 5 seconds
@@ -80,29 +70,29 @@ func dbConnect(dbVars DatabaseVars) {
 			log.Fatal(errors.New("failed to connect to database"))
 		case <-ticker.C:
 			if db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{}); err == nil {
-				DBgorm = db
-				return
+				return db
 			}
 		}
 	}
 }
 
-func init() {
+func main() {
+
 	// Retrieve the database information from environnement
 	dbVars := getDatabaseVariablesFromEnv()
 	// Database initialization first
-	dbConnect(dbVars)
-}
+	DBgorm := dbConnect(dbVars)
 
-func main() {
-
+	// Get the sql.DB to close the connection later
 	sqlDB, err := DBgorm.DB()
 	if err != nil {
 		log.Fatal("failed to retrieve the sql.DB from gorm", err)
 	}
 	defer sqlDB.Close()
-	// Controller needs to perform requests
-	service.DBgorm = DBgorm
+
+	// Service needs to perform requests, but controller will pass it
+	// to the service
+	controller := controller.NewController(DBgorm)
 
 	// On the first launch, will initialize the db & create tables, fields, keys, indexes
 	if err = DBgorm.AutoMigrate(&model.Statistic{}); err != nil {

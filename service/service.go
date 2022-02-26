@@ -10,7 +10,15 @@ import (
 	"gorm.io/gorm"
 )
 
-var DBgorm *gorm.DB
+type Service struct {
+	DBgorm *gorm.DB
+}
+
+func NewService(DBgorm *gorm.DB) *Service {
+	return &Service{
+		DBgorm: DBgorm,
+	}
+}
 
 // Returns the fizzbuzz numbers according to the given mandatory parameters.
 // Fizzbuzz algorithm is described as below:
@@ -23,7 +31,7 @@ var DBgorm *gorm.DB
 //
 // Additional rule: if a number is a multiple of both int1 & int2, it will be
 // replaced by the concatenation of str1 & str2.
-func FizzbuzzList(stat *model.Statistic) string {
+func (s *Service) FizzbuzzList(stat *model.Statistic) string {
 
 	strBoth := stat.Str1 + stat.Str2
 	sb := strings.Builder{}
@@ -53,9 +61,9 @@ func FizzbuzzList(stat *model.Statistic) string {
 // Save the parameters in DB.
 //
 // Perform either an insert if those were not inserted before or an update.
-func UpdateDB(stat *model.Statistic) {
+func (s *Service) UpdateDB(stat *model.Statistic) {
 	// Check if the request (parameters) already exists in DB
-	err := DBgorm.Where(stat).Take(stat).Error
+	err := s.DBgorm.Where(stat).Take(stat).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Fatal(err)
 	}
@@ -65,12 +73,12 @@ func UpdateDB(stat *model.Statistic) {
 
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		// Insert if the request isn't already saved
-		if tx := DBgorm.Create(stat); tx.Error != nil {
+		if tx := s.DBgorm.Create(stat); tx.Error != nil {
 			log.Fatal(tx.Error)
 		}
 	} else {
 		// Or update the found record
-		if tx := DBgorm.Save(stat); tx.Error != nil {
+		if tx := s.DBgorm.Save(stat); tx.Error != nil {
 			log.Fatal(tx.Error)
 		}
 	}
@@ -78,11 +86,11 @@ func UpdateDB(stat *model.Statistic) {
 
 // Returns the most used parameters for the fizzbuzz numbers. It is possible
 // to get multiples rows by calling this method.
-func RetriveStatistics() []model.Statistic {
+func (s *Service) RetriveStatistics() []model.Statistic {
 	statistics := []model.Statistic{}
 
 	// SELECT * FROM `statistic` WHERE hits = (SELECT MAX(hits) from `statistic`)
-	if tx := DBgorm.Where("hits = (?)", DBgorm.Table("statistic").Select("MAX(hits)")).Find(&statistics); tx.Error != nil {
+	if tx := s.DBgorm.Where("hits = (?)", s.DBgorm.Table("statistic").Select("MAX(hits)")).Find(&statistics); tx.Error != nil {
 		log.Fatal(tx.Error)
 	}
 
