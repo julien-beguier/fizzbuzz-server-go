@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/julien-beguier/fizzbuzz-server-go/controller"
 	"github.com/julien-beguier/fizzbuzz-server-go/model"
+	"github.com/julien-beguier/fizzbuzz-server-go/service"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -66,7 +67,7 @@ func main() {
 	}
 	defer sqlDB.Close()
 	// Controller needs to perform requests
-	controller.DBgorm = DBgorm
+	service.DBgorm = DBgorm
 
 	// On the first launch, will initialize the db & create tables, fields, keys, indexes
 	if err = DBgorm.AutoMigrate(&model.Statistic{}); err != nil {

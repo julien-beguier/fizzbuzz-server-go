@@ -9,11 +9,9 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/julien-beguier/fizzbuzz-server-go/model"
+	"github.com/julien-beguier/fizzbuzz-server-go/service"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
-
-var DBgorm *gorm.DB
 
 type QueryParam struct {
 	Limit string `validate:"required,numeric"`
@@ -23,20 +21,9 @@ type QueryParam struct {
 	Str2  string `validate:"required,alphanum,max=64"`
 }
 
-// Returns the fizzbuzz numbers according to the given mandatory parameters.
-// Fizzbuzz algorithm is described as below:
-//
-// - limit: is the max number the algorithm will count to.
-//
-// - int1 & int2: are the numbers to look for multiples.
-//
-// - str1 & str2: are the strings to replace the numbers multiple of int1 & int2.
-//
-// Additional rule: if a number is a multiple of both int1 & int2, it will be
-// replaced by the concatenation of str1 & str2.
-//
-// After every parameters are checked, considered valid and the numbers list
-// processed, the parameters are saved in a MySQL database for further requesting.
+// Check parameters, call the service to get the fizzbuzz numbers list.
+// Then the service is called to save the parameters in a MySQL database for
+// further requesting.
 //
 // Errors:
 //
@@ -58,58 +45,19 @@ func GetFizzbuzzNumbers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// FIZZBUZZ ALGO
-	strBoth := stat.Str1 + stat.Str2
-	sb := strings.Builder{}
+	// Fizzbuzz Algo
+	fizzbuzzNumbers := service.FizzbuzzList(stat)
 
-	for i := uint(1); i <= stat.Limit; i++ {
-		if i != 1 {
-			sb.WriteString(", ")
-		}
-
-		if i%stat.Int1 == 0 && i%stat.Int2 == 0 {
-			// Multiples of both int1 & int2
-			sb.WriteString(strBoth)
-		} else if i%stat.Int2 == 0 {
-			// Multiples of both int2
-			sb.WriteString(stat.Str2)
-		} else if i%stat.Int1 == 0 {
-			// Multiples of both int1
-			sb.WriteString(stat.Str1)
-		} else {
-			// Not a multiple
-			sb.WriteString(fmt.Sprint(i))
-		}
-	}
-
-	// Check if the request (parameters) already exists in DB
-	err := DBgorm.Where(stat).Take(stat).Error
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Fatal(err)
-	}
-
-	// Increment the request hits counter before the insert or update
-	stat.Hits++
-
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		// Insert if the request isn't already saved
-		if tx := DBgorm.Create(stat); tx.Error != nil {
-			log.Fatal(tx.Error)
-		}
-	} else {
-		// Or update the found record
-		if tx := DBgorm.Save(stat); tx.Error != nil {
-			log.Fatal(tx.Error)
-		}
-	}
+	// Save the parameters in DB
+	service.UpdateDB(stat)
 
 	// Send the fizzbuzz numbers
 	log.Info("Fizzbuzz numbers printed")
-	writeToCaller(w, sb.String())
+	writeToCaller(w, fizzbuzzNumbers)
 }
 
-// Returns the most used parameters for the fizzbuzz numbers. It is possible
-// to get multiples rows by calling this method.
+// Call the service to get the most used parameters for the fizzbuzz numbers. It
+// is possible to get multiples rows by calling this method.
 //
 // Errors:
 //
@@ -126,11 +74,8 @@ func GetStatistics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	statistics := []model.Statistic{}
-	// SELECT * FROM `statistic` WHERE hits = (SELECT MAX(hits) from `statistic`)
-	if tx := DBgorm.Where("hits = (?)", DBgorm.Table("statistic").Select("MAX(hits)")).Find(&statistics); tx.Error != nil {
-		log.Fatal(tx.Error)
-	}
+	// Query DB about the most used paramters
+	statistics := service.RetriveStatistics()
 
 	// There is no row
 	if len(statistics) == 0 {
