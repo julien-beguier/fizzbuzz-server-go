@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -23,18 +24,50 @@ const (
 
 var DBgorm *gorm.DB
 
+type DatabaseVars struct {
+	user     string
+	password string
+	database string
+	host     string
+	port     string
+}
+
+// Retrieve the database connection informations from the environnement and returns
+// a struct containing the values as strings
+func getDatabaseVariablesFromEnv() DatabaseVars {
+	userString, userBool := os.LookupEnv("DATABASE_USER")
+	passwordString, passwordBool := os.LookupEnv("DATABASE_PASS")
+	databaseString, databaseBool := os.LookupEnv("DATABASE_NAME")
+	hostString, hostBool := os.LookupEnv("DATABASE_HOST")
+	portString, portBool := os.LookupEnv("DATABASE_PORT")
+
+	if !userBool || !passwordBool || !databaseBool || !hostBool || !portBool {
+		log.Fatal("failed to retrieve the database informations from environnement")
+	}
+
+	dbVars := DatabaseVars{
+		user:     userString,
+		password: passwordString,
+		database: databaseString,
+		host:     hostString,
+		port:     portString,
+	}
+
+	return dbVars
+}
+
 // Try to connect to the database and sets the Gorm object if it succeed.
 //
 // If there is an error, the program will abort.
-func dbConnect() {
-	dbUser := "fizzbuzz-user"
-	dbPass := "7bMP+_qjyyAVy+=mY+DU"
-	dbName := "fizzbuzz"
+func dbConnect(dbVars DatabaseVars) {
+	// dbUser := "fizzbuzz-user"
+	// dbPass := "7bMP+_qjyyAVy+=mY+DU"
+	// dbName := "fizzbuzz"
 	// Because when this run inside a container, is use the docker network
 	// interface to communicate with other container
-	dbHost := "db"
-	dbPort := "3306"
-	dsn := dbUser + ":" + dbPass + "@tcp(" + dbHost + ":" + dbPort + ")/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
+	// dbHost := "db"
+	// dbPort := "3306"
+	dsn := dbVars.user + ":" + dbVars.password + "@tcp(" + dbVars.host + ":" + dbVars.port + ")/" + dbVars.database + "?charset=utf8mb4&parseTime=True&loc=Local"
 
 	// Interval at which a new try is done, 5 seconds
 	ticker := time.NewTicker(time.Second * 10)
@@ -55,8 +88,10 @@ func dbConnect() {
 }
 
 func init() {
+	// Retrieve the database information from environnement
+	dbVars := getDatabaseVariablesFromEnv()
 	// Database initialization first
-	dbConnect()
+	dbConnect(dbVars)
 }
 
 func main() {

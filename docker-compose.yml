@@ -5,8 +5,14 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+    environment:
+      DATABASE_NAME: 'fizzbuzz'
+      DATABASE_USER: 'fizzbuzz-user'
+      DATABASE_PASS: '7bMP+_qjyyAVy+=mY+DU'
+      DATABASE_HOST: 'db'
+      DATABASE_PORT: '3306'
     ports:
-      - "8080:8080"
+      - "18080:8080"
     depends_on:
       - db
 
@@ -18,7 +24,7 @@ services:
       MYSQL_DATABASE: 'fizzbuzz'
       MYSQL_USER: 'fizzbuzz-user'
       MYSQL_PASSWORD: '7bMP+_qjyyAVy+=mY+DU'
-      MYSQL_ROOT_PASSWORD: 'rootpassword'
+      MYSQL_ROOT_PASSWORD: 'change_me_root_password'
       MYSQL_PORT: '18060'
     ports:
       - "18060:3306"
