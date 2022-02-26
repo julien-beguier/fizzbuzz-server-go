@@ -15,7 +15,7 @@ server:
 	@echo "\n\033[1;31mBuild $(GSSERVER) complete\033[0;0m\n"
 
 test:
-	$(GO) $(TEST)
+	$(GO) $(TEST) ./...
 
 fclean:
 	$(RM) $(BIN)/$(GSSERVER)
