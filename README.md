@@ -1,7 +1,9 @@
 # fizzbuzz-server-go
 Implementation of the fizzbuzz game in Go - https://en.wikipedia.org/wiki/Fizz_buzz
 
-## `GET` /list
+## Available routes:
+
+### `GET` /list
 
 ```
 /list?limit=100&int1=3&int2=5&str1=toto&str2=titi
@@ -22,7 +24,7 @@ Query parameters
 * str2: str2 is the String that replace the multiples of int2
 
 
-## `GET` /statistics
+### `GET` /statistics
 
 ```
 /statistics
@@ -31,3 +33,28 @@ Query parameters
 * Expects no parameter
 * Returns the parameters corresponding to the most used request, as well as the
 number of hits for this request
+
+## Deploy
+
+First thing to do is clone the repository
+```
+cd /var/tmp && git clone https://github.com/julien-beguier/fizzbuzz-server-go.git
+```
+Then launch:
+```
+docker-compose up
+```
+That's it!
+
+You can now request either:
+```
+localhost:18080/list?
+```
+or
+```
+localhost:18080/statistics
+```
+
+### Requirements
+
+docker & docker-compose
