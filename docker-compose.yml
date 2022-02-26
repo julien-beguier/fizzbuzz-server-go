@@ -1,3 +1,4 @@
+version: '3'
 services:
   fizzbuzz:
     container_name: fizzbuzz-server
@@ -18,9 +19,6 @@ services:
       MYSQL_USER: 'fizzbuzz-user'
       MYSQL_PASSWORD: '7bMP+_qjyyAVy+=mY+DU'
       MYSQL_ROOT_PASSWORD: 'rootpassword'
+      MYSQL_PORT: '18060'
     ports:
-      # <Port exposed> : < MySQL Port running inside container>
-      - "3306:3306"
-    expose:
-      # Opens port 3306 on the container
-      - "3306"
+      - "18060:3306"

@@ -29,7 +29,11 @@ func dbConnect() {
 	dbUser := "fizzbuzz-user"
 	dbPass := "7bMP+_qjyyAVy+=mY+DU"
 	dbName := "fizzbuzz"
-	dsn := dbUser + ":" + dbPass + "@tcp(db:3306)/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
+	// Because when this run inside a container, is use the docker network
+	// interface to communicate with other container
+	dbHost := "db"
+	dbPort := "3306"
+	dsn := dbUser + ":" + dbPass + "@tcp(" + dbHost + ":" + dbPort + ")/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
 
 	// Interval at which a new try is done, 5 seconds
 	ticker := time.NewTicker(time.Second * 10)
