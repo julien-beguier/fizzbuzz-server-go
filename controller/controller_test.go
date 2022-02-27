@@ -5,13 +5,13 @@ import (
 	"testing"
 )
 
-type TestCase struct {
+type testCase struct {
 	qp            QueryParam
 	expextedError string
 }
 
 func TestErrorCasesCheckParams(t *testing.T) {
-	errorCases := []TestCase{
+	errorCases := []testCase{
 		// Empty set -> equivalent of not giving any parameter
 		{QueryParam{}, "parameter limit is required\nparameter int1 is required\nparameter int2 is required\nparameter str1 is required\nparameter str2 is required"},
 

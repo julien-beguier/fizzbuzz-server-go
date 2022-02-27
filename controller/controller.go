@@ -60,7 +60,7 @@ func (c *Controller) GetFizzbuzzNumbers(w http.ResponseWriter, r *http.Request) 
 	fizzbuzzNumbers := c.service.FizzbuzzList(stat)
 
 	// Save the parameters in DB
-	c.service.UpdateDB(stat)
+	c.service.InsertOrUpdateStatistic(stat)
 
 	// Send the fizzbuzz numbers
 	log.Info("Fizzbuzz numbers printed")
@@ -86,7 +86,7 @@ func (c *Controller) GetStatistics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Query DB about the most used paramters
-	statistics := c.service.RetriveStatistics()
+	statistics := c.service.RetrieveStatistics()
 
 	// There is no row
 	if len(statistics) == 0 {

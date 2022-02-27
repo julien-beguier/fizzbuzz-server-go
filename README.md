@@ -11,7 +11,10 @@ Change directory and launch:
 ```
 docker-compose up --build
 ```
+
 That's it!
+
+***During the compose step, the http-server will attempt to connect to the mysql container but since it's initialization is slow it can take some time. It will throw errors because it can't immediately connect but this is normal. This only happens on the first launch.***
 
 You can now request either:
 ```

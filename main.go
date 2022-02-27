@@ -21,7 +21,7 @@ const (
 	PORT = 8080
 )
 
-type DatabaseVars struct {
+type databaseVars struct {
 	user     string
 	password string
 	database string
@@ -31,7 +31,7 @@ type DatabaseVars struct {
 
 // Retrieve the database connection informations from the environnement and returns
 // a struct containing the values as strings
-func getDatabaseVariablesFromEnv() DatabaseVars {
+func getDatabaseVariablesFromEnv() databaseVars {
 	userString, userBool := os.LookupEnv("DATABASE_USER")
 	passwordString, passwordBool := os.LookupEnv("DATABASE_PASS")
 	databaseString, databaseBool := os.LookupEnv("DATABASE_NAME")
@@ -42,7 +42,7 @@ func getDatabaseVariablesFromEnv() DatabaseVars {
 		log.Fatal("failed to retrieve the database informations from environnement")
 	}
 
-	dbVars := DatabaseVars{
+	dbVars := databaseVars{
 		user:     userString,
 		password: passwordString,
 		database: databaseString,
@@ -56,7 +56,7 @@ func getDatabaseVariablesFromEnv() DatabaseVars {
 // Try to connect to the database and sets the Gorm object if it succeed.
 //
 // If there is an error, the program will abort.
-func dbConnect(dbVars DatabaseVars) *gorm.DB {
+func dbConnect(dbVars databaseVars) *gorm.DB {
 	dsn := dbVars.user + ":" + dbVars.password + "@tcp(" + dbVars.host + ":" + dbVars.port + ")/" + dbVars.database + "?charset=utf8mb4&parseTime=True&loc=Local"
 
 	// Interval at which a new try is done, 5 seconds

@@ -2,6 +2,7 @@ version: '3'
 services:
   fizzbuzz:
     container_name: fizzbuzz-server
+    restart: unless-stopped
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -21,7 +22,7 @@ services:
   db:
     image: mysql:8.0.28
     container_name: fizzbuzz-mysql
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: 'fizzbuzz'
       MYSQL_USER: 'fizzbuzz-user'

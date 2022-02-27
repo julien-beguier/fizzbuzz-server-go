@@ -61,7 +61,7 @@ func (s *Service) FizzbuzzList(stat *model.Statistic) string {
 // Save the parameters in DB.
 //
 // Perform either an insert if those were not inserted before or an update.
-func (s *Service) UpdateDB(stat *model.Statistic) {
+func (s *Service) InsertOrUpdateStatistic(stat *model.Statistic) {
 	// Check if the request (parameters) already exists in DB
 	err := s.DBgorm.Where(stat).Take(stat).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -86,7 +86,7 @@ func (s *Service) UpdateDB(stat *model.Statistic) {
 
 // Returns the most used parameters for the fizzbuzz numbers. It is possible
 // to get multiples rows by calling this method.
-func (s *Service) RetriveStatistics() []model.Statistic {
+func (s *Service) RetrieveStatistics() []model.Statistic {
 	statistics := []model.Statistic{}
 
 	// SELECT * FROM `statistic` WHERE hits = (SELECT MAX(hits) from `statistic`)
